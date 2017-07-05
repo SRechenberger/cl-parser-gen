@@ -16,14 +16,14 @@ after the match and all captures."
 	       for match-end across match-ends
 	       collect (subseq input match-begin match-end))))))
 
-(defmacro define-tokenizer (name &rest rules)
+(defmacro define-tokenizer (name params &rest rules)
   "Given a NAME and a set of RULES, this macro expands to a tokenizer function of name NAME,
 which takes a string INPUT and tries to tokenize it according to the given rules.
 The rules consist of a regular expression and a function, which will be applied to the result
 vector of the regex; hence the ID function, if you want to get the plain match."
   ;; (format t "~s~%" rules)
   (with-gensyms (input tmp)
-    `(defun ,name (,input)
+    `(defun ,name (,input ,@params)
        (let ((,tmp))
 	 (loop
 	    while (< 0 (length ,input))

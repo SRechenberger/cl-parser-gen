@@ -11,6 +11,8 @@
     :license "BSD"
     :description "Parser generation utilties"
     :components ((:file "packages")
-		 (:file "tokenizer" :depends-on ("packages")))
+		 (:file "tokenizer" :depends-on ("packages"))
+		 (:file "examples" :depends-on ("tokenizer")))
     :depends-on (:macro-utilities
+		 :test-framework
 		 :cl-ppcre))
