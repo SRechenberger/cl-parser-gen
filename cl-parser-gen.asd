@@ -5,9 +5,9 @@
 
 (defsystem :cl-parser-gen
     :name "cl-parser-gen"
-    :author "Sascha Rechenberger"
+    :author "Sascha Rechenberger <sascha.rechenberger@uni-ulm.de>"
     :version "0.1"
-    :maintainer "Sascha Rechenberger"
+    :maintainer "Sascha Rechenberger <sascha.rechenberger@uni-ulm.de>"
     :license "BSD"
     :description "Parser generation utilties"
     :components ((:file "packages")
