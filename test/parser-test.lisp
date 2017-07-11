@@ -1,6 +1,6 @@
 (in-package :de.srechenberger.parser-test)
 
-(defvar *grammar-1*
+(defconstant +grammar-1-ctrl+
   (list
    (list 'A (list 'B 'C))
    (list 'A (list :d :e))
@@ -15,7 +15,7 @@
   ('B --> :eps)
   ('C --> :c))
 
-(defvar *grammar-2*
+(defconstant +grammar-2-ctrl+
   (list
    (list :expr (list :sum))
    (list :sum  (list :product))
@@ -38,28 +38,37 @@
   (:value   --> :id)
   (:value   --> #\( :expr #\)))
 
+(define-grammar +grammar-3+
+  (:a -->))
+
 (deftest def-grammar-test ()
   (check
-    (equal +grammar-1+ *grammar-1*)
-    (equal +grammar-2+ *grammar-2*)))
+    (equal +grammar-1+ +grammar-1-ctrl+)
+    (equal +grammar-2+ +grammar-2-ctrl+)))
 
 (deftest grammar-1-first-set-test ()
-  (with-grammar *grammar-1*
+  (with-grammar +grammar-1+
     (check
       (equal (first-set 'A) (list :c :d))
       (equal (first-set 'B) (list :c :eps))
       (equal (first-set 'C) (list :c)))))
 
 (deftest grammar-2-first-set-test ()
-  (with-grammar *grammar-2*
+  (with-grammar +grammar-2+
     (check
       (equal (first-set :expr) (list :id #\())
       (equal (first-set :sum)  (list :id #\())
       (equal (first-set :product) (list :id #\())
       (equal (first-set :value) (list :id #\()))))
 
+(deftest grammar-3-first-set-test ()
+  (with-grammar +grammar-3+
+    (check
+      (equal (first-set :a) (list :eps)))))
+	      
 (deftest run-test ()
   (combine-results
     (def-grammar-test)
     (grammar-1-first-set-test)
-    (grammar-2-first-set-test)))
+    (grammar-2-first-set-test)
+    (grammar-3-first-set-test)))
