@@ -1,18 +1,23 @@
 (in-package :cl-user)
 
-(defpackage :de.srechenberger.parser-test
+(defpackage :de.srechenberger.cl-parser-gen.parser-test
+  (:nicknames :parser-test)
   (:use :cl
 	:com.gigamonkeys.test
-	:de.srechenberger.parser)
-  (:export :run-test))
+	:de.srechenberger.cl-parser-gen.parser)
+  (:export :parser-test))
 
-(defpackage :de.srechenberger.tokenizer-test
+(defpackage :de.srechenberger.cl-parser-gen.tokenizer-test
+  (:nicknames :tokenizer-test)
   (:use :cl
-	:de.srechenberger.tokenizer
+	:de.srechenberger.cl-parser-gen.tokenizer
 	:com.gigamonkeys.test)
-  (:export :run-test))
+  (:export :tokenizer-test))
 
-(defpackage :de.srechenberger.all-test
+(defpackage :de.srechenberger.cl-parser-gen.test
+  (:nicknames :test)
   (:use :cl
+	:de.srechenberger.cl-parser-gen.parser-test
+	:de.srechenberger.cl-parser-gen.tokenizer-test
 	:com.gigamonkeys.test)
   (:export :test-all))

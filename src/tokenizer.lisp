@@ -1,4 +1,4 @@
-(in-package :de.srechenberger.tokenizer)
+(in-package :de.srechenberger.cl-parser-gen.tokenizer)
 
 (define-condition tokenizer-error (error)
   ((text :initarg :text

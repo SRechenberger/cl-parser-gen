@@ -1,6 +1,6 @@
-(in-package :de.srechenberger.all-test)
+(in-package :de.srechenberger.cl-parser-gen.test)
 
 (deftest test-all ()
   (combine-results
-    (de.srechenberger.tokenizer-test:run-test)
-    (de.srechenberger.parser-test:run-test)))
+    (tokenizer-test:tokenizer-test)
+    (parser-test:parser-test)))

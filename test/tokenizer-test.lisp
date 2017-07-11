@@ -1,4 +1,4 @@
-(in-package :de.srechenberger.tokenizer-test)
+(in-package :de.srechenberger.cl-parser-gen.tokenizer-test)
 
 ;; Lex some whitespaces
 
@@ -73,7 +73,7 @@
     (equal (params-1 "10" 2 1) (list 12))
     (equal (params-2 ";1;11;111;1111;" #'length) (list 0 1 2 3 4))))
 
-(deftest run-test ()
+(deftest tokenizer-test ()
   (combine-results
     (whitespaces-test)
     (pairs-test)

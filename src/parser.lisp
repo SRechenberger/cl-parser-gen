@@ -1,9 +1,10 @@
-(in-package :de.srechenberger.parser)
+(in-package :de.srechenberger.cl-parser-gen.parser)
 
+;;;; Parser generator utilities
 
 (defmacro define-grammar (name &body rules)
-  "Defines a constant with name NAME; keep naming conventions in mind."
-  `(defconstant ,name
+  "Defines a variable with name NAME; keep naming conventions in mind."
+  `(defparameter ,name
      (list ,@(loop
 		for rule in rules
 		do (when (not (equal (second rule) '-->))
@@ -35,7 +36,9 @@
 
 (defparameter *depth* 0)
 (defparameter *debug* nil)
+
 (defun first-set (symb)
+  "Calculates the FIRST set of the current grammar stored in *GRAMMAR*."
   (let ((*depth* (1+ *depth*)))
     (cond
       ;; I: SYMB is a terminal
@@ -75,16 +78,8 @@
 			      (remove :eps (reduce #'union bucket)))))))))
 
 (defmacro with-grammar (grammar &body body)
+  "Initiates the envrironment with the given GRAMMAR"
   `(let ((*grammar* ,grammar)
 	 (*non-terminals* (mapcar #'first ,grammar))
 	 (*first-sets* (make-hash-table)))
      ,@body))
-		  
-		
-	     
-  
-			    
-			  
-	       
-		    
-  
