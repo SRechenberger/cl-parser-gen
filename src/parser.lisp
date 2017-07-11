@@ -1,5 +1,17 @@
 (in-package :de.srechenberger.parser)
 
+
+(defmacro define-grammar (name &body rules)
+  "Defines a constant with name NAME; keep naming conventions in mind."
+  `(defconstant ,name
+     (list ,@(loop
+		for rule in rules
+		do (when (not (equal (second rule) '-->))
+		     (error (format nil "Syntax error in ~a" rule)))
+		collect `(list ,(car rule) ,(cons 'list (cddr rule)))))))
+     
+
+
 (defparameter *test-grammar*
   (list (list 'A (list 'B 'C))
 	(list 'A (list :d :e))

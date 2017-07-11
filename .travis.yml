@@ -14,4 +14,4 @@ install:
   - curl -L https://github.com/luismbo/cl-travis/raw/master/install.sh | sh
 
 script:
-  - cl --load runtest.lisp
+  - cl --load test/runtest.lisp

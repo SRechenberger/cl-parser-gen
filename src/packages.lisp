@@ -10,4 +10,6 @@
   (:use :cl
 	:com.gigamonkeys.macro-utilities)
   (:export :first-set
-	   :with-grammar))
+	   :-->
+	   :with-grammar
+	   :define-grammar))
