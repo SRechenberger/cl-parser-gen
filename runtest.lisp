@@ -4,5 +4,5 @@
 (ql:quickload :cl-parser-gen-test)
 
 (if (de.srechenberger.all-test:test-all)
-  (exit :code 0)
-  (exit :code 1))
+  (uiop:quit 0)
+  (uiop:quit 1))
