@@ -12,7 +12,9 @@
     :description "Parser generation utilties"
     :components ((:file "packages")
 		 (:file "tokenizer" :depends-on ("packages"))
-		 (:file "examples" :depends-on ("tokenizer")))
+		 (:file "parser" :depends-on ("packages")))
     :depends-on (:macro-utilities
-		 :test-framework
 		 :cl-ppcre))
+
+
+		      

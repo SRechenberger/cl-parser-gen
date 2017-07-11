@@ -1,4 +1,4 @@
-(in-package :de.srechenberger.tokenizer.test)
+(in-package :de.srechenberger.tokenizer-test)
 
 ;; Lex some whitespaces
 
