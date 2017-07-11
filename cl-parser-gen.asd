@@ -10,11 +10,11 @@
     :maintainer "Sascha Rechenberger <sascha.rechenberger@uni-ulm.de>"
     :license "BSD"
     :description "Parser generation utilties"
+    :pathname "src/"
     :components ((:file "packages")
 		 (:file "tokenizer" :depends-on ("packages"))
 		 (:file "parser" :depends-on ("packages")))
     :depends-on (:macro-utilities
 		 :cl-ppcre))
-
 
 		      

@@ -10,6 +10,7 @@
   :maintainer "Sascha Rechenberger <sascha.rechenberger@uni-ulm.de>"
   :license "BSD"
   :description "Parser generatoin utilities test suite"
+  :pathname "test/"
   :components ((:file "packages-test")
 	       (:file "tokenizer-test" :depends-on ("packages-test"))
 	       (:file "parser-test" :depends-on ("packages-test"))
