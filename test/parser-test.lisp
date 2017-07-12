@@ -8,12 +8,12 @@
    (list 'B (list :eps))
    (list 'C (list :c))))
 
-(define-grammar *grammar-1*
-  ('A --> 'B 'C)
-  ('A --> :d :e)
-  ('B --> 'C)
-  ('B --> :eps)
-  ('C --> :c))
+(define-grammar *grammar-1* A
+  (A --> B C)
+  (A --> :d :e)
+  (B --> C)
+  (B --> :eps)
+  (C --> :c))
 
 (defparameter *grammar-2-ctrl*
   (list
@@ -27,7 +27,7 @@
    (list :value (list :id))
    (list :value (list #\( :expr #\)))))
 
-(define-grammar *grammar-2*
+(define-grammar *grammar-2* :expr
   (:expr    --> :sum)
   (:sum     --> :product)
   (:sum     --> :product #\+ :sum)
@@ -41,34 +41,31 @@
 (defparameter *grammar-3-ctrl*
   (list (list :a (list))))
 
-(define-grammar *grammar-3*
+(define-grammar *grammar-3* :a
   (:a -->))
 
 (deftest def-grammar-test ()
   (check
-    (equal *grammar-1* *grammar-1-ctrl*)
-    (equal *grammar-2* *grammar-2-ctrl*)
-    (equal *grammar-3* *grammar-3-ctrl*)))
+    (equal (rules *grammar-1*) *grammar-1-ctrl*)
+    (equal (rules *grammar-2*) *grammar-2-ctrl*)
+    (equal (rules *grammar-3*) *grammar-3-ctrl*)))
 
 (deftest grammar-1-first-set-test ()
-  (with-grammar *grammar-1*
-    (check
-      (equal (first-set 'A) (list :c :d))
-      (equal (first-set 'B) (list :c :eps))
-      (equal (first-set 'C) (list :c)))))
+  (check
+   (equal (gethash 'A (first-sets *grammar-1*)) (list :c :d))
+   (equal (gethash 'B (first-sets *grammar-1*)) (list :c :eps))
+   (equal (gethash 'C (first-sets *grammar-1*)) (list :c))))
 
 (deftest grammar-2-first-set-test ()
-  (with-grammar *grammar-2*
-    (check
-      (equal (first-set :expr) (list :id #\())
-      (equal (first-set :sum)  (list :id #\())
-      (equal (first-set :product) (list :id #\())
-      (equal (first-set :value) (list :id #\()))))
+  (check
+   (equal (gethash :expr (first-sets *grammar-2*)) (list :id #\())
+   (equal (gethash :sum (first-sets *grammar-2*)) (list :id #\())
+   (equal (gethash :product (first-sets *grammar-2*)) (list :id #\())
+   (equal (gethash :value (first-sets *grammar-2*)) (list :id #\())))
 
 (deftest grammar-3-first-set-test ()
-  (with-grammar *grammar-3*
-    (check
-      (equal (first-set :a) (list :eps)))))
+  (check
+   (equal (gethash :a (first-sets *grammar-3*)) (list :eps))))
 	      
 (deftest parser-test ()
   (combine-results

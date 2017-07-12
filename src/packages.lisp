@@ -11,7 +11,10 @@
   (:nicknames :parser)
   (:use :cl
 	:com.gigamonkeys.macro-utilities)
-  (:export :first-set
+  (:export :first-sets
+	   :follow-sets
+	   :non-terminals
+	   :rules
+	   :start-symbol
 	   :-->
-	   :with-grammar
 	   :define-grammar))
