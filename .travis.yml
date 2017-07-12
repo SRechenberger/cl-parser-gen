@@ -4,7 +4,6 @@ sudo: required
 env:
   matrix:
     - LISP=sbcl
-    - LISP=abcl
 
   matrix:
     allow_failures:
