@@ -21,6 +21,7 @@ an error is throws (via ASSERT)"
 		(*first-sets* (make-hash-table))
 		(*follow-sets* (make-hash-table)))
 	    ,@body)))
+
 ;;; The grammar class,
 ;;; consisting of a START-SYMBOL,
 ;;; the set of NON-TERMINALS,
@@ -69,7 +70,9 @@ and converts them to a list
   "Defines a variable with name NAME; keep naming conventions in mind.
 It needs the start symbol S-SYMBOL and a body of RULES of the form
  (NON-TERMINAL --> SYMBOL*)
-where a SYMBOL may be any terminal or non-terminal" 
+where a SYMBOL may be any terminal or non-terminal and also PREDICATES.
+If the parser is generated, TERMINALS will be compared with a then given EQUAL predicate,
+if the terminal is a PREDICATE, it will be applied to the seen token, and accepted on a non nil result."
   (let* ((correct-rules (make-rules rules))
 	 (nts (remove-duplicates (mapcar #'first correct-rules)))
 	 (first-follow (with-grammar correct-rules
@@ -149,4 +152,25 @@ where a SYMBOL may be any terminal or non-terminal"
 	  finally (return (if (member :eps f)
 			      (reduce #'union bucket)
 			      (remove :eps (reduce #'union bucket)))))))))
+
+(defmacro define-ll-1-parser (grammar)
+  "Given some rules like
+(A --> #'evenp :c)
+(A --> :a      :b)
+the parser code may look like this,
+where TOPP checks, if the given item is atop the STACK
+and STACK is the item stack of the parser.
+(cond
+  ...
+  ((topp A)
+   (cond
+     ((#'evenp look-ahead)
+      (push :c stack)
+      (push #'evenp stack))
+     ((equal look-ahead :a)
+      (push :b stack)
+      (push :a stack))))
+  ...)"
+  (error "DEFINE-PARSER NOT IMPLEMENTED YET"))
+
 
