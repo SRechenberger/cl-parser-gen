@@ -1,16 +1,8 @@
 language: common-lisp
 sudo: required
 
-env:
-  matrix:
-    - LISP=sbcl
-
-  matrix:
-    allow_failures:
-      - env: LISP=abcl
-
 install:
   - curl -L https://github.com/luismbo/cl-travis/raw/master/install.sh | sh
 
 script:
-  - cl --load test/runtest.lisp
+  - sbcl --load test/runtest.lisp
