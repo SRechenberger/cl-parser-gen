@@ -6,18 +6,32 @@
 (defparameter *follow-sets* nil)
 (defparameter *non-terminals* nil)
 (defparameter *grammar* nil)
+(defparameter *depth* 0)
+(defparameter *debug* nil)
+(defparameter *start-symbol* nil)
+
+(defmacro unions (&body sets)
+  `(reduce #'union (list ,@sets)))
+
+(defun non-term-p (symb)
+  (member symb *non-terminals*))
+
+(defun term-p (symb)
+  (and (not (listp symb))
+       (not (non-term-p symb))))
 
 ;;; The only way to use the latter variables!
-(defmacro with-grammar (grammar &body body)
+(defmacro with-grammar ((grammar start-symbol) &body body)
   "Initiates the envrironment with the given GRAMMAR rules;
 if any of the variables *FIRST-SETS*, *FOLLOW-SETS*, *NON-TERMINALS*, or *GRAMMAR* is set,
 an error is throws (via ASSERT)"
   `(progn (assert (not (or *first-sets*
-		   *follow-sets*
-		   *non-terminals*
-		   *grammar*)))
+			   *follow-sets*
+			   *non-terminals*
+			   *grammar*)))
 	  (let ((*grammar* ,grammar)
 		(*non-terminals* (mapcar #'first ,grammar))
+		(*start-symbol* ',start-symbol)
 		(*first-sets* (make-hash-table))
 		(*follow-sets* (make-hash-table)))
 	    ,@body)))
@@ -75,7 +89,7 @@ If the parser is generated, TERMINALS will be compared with a then given EQUAL p
 if the terminal is a PREDICATE, it will be applied to the seen token, and accepted on a non nil result."
   (let* ((correct-rules (make-rules rules))
 	 (nts (remove-duplicates (mapcar #'first correct-rules)))
-	 (first-follow (with-grammar correct-rules
+	 (first-follow (with-grammar (correct-rules s-symbol)
 			 (dolist (nt nts)
 			   (first-set nt))
 			 (dolist (nt nts)
@@ -89,29 +103,22 @@ if the terminal is a PREDICATE, it will be applied to the seen token, and accept
 	:rules ',correct-rules
 	:first-sets ,(first first-follow)
 	:follow-sets ,(second first-follow))
-       ,(format nil "GRAMMAR ~a~%START-SYMBOL: ~s~%NON-TERMINALS: {~{~s~^, ~}}~%RULES:~%~{ ~{~s~^ ~}~^~%~}~%"
-		name
-		s-symbol
-		nts
-		rules))))
+       ,(format
+	 nil
+	 "GRAMMAR ~a~%START-SYMBOL: ~s~%NON-TERMINALS: {~{~s~^, ~}}~%RULES:~%~{ ~{~s~^ ~}~^~%~}~%"
+	 name
+	 s-symbol
+	 nts
+	 rules))))
 		    
 
 ;; DUMMY
 (defun follow-set (symb)
-  nil)
+  (warn "FOLLOW-SET STILL IN DEVELOPMENT.")
+  nil
+  
+  )
 
-(defmacro unions (&body sets)
-  `(reduce #'union (list ,@sets)))
-
-(defun non-term-p (symb)
-  (member symb *non-terminals*))
-
-(defun term-p (symb)
-  (and (not (listp symb))
-       (not (non-term-p symb))))
-
-(defparameter *depth* 0)
-(defparameter *debug* nil)
 
 (defun first-set (symb)
   "Calculates the FIRST set of the current grammar stored in *GRAMMAR*."
