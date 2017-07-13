@@ -44,6 +44,16 @@
 (define-grammar *grammar-3* :a
   (:a -->))
 
+(define-grammar *grammar-4* :f
+  (:f --> #'(lambda (x) (< 0 x)) :pos)
+  (:f --> #'(lambda (x) (< x 0)) :neg)
+  (:g --> #'evenp :even)
+  (:g --> #'oddp :odd))
+
+(define-grammar *grammar-5* :f
+  (:f --> (lambda (x) (< 0 x)) :pos)
+  (:f --> (lambda (x) (< x 0)) :neg))
+
 (deftest def-grammar-test ()
   (check
     (equal (rules *grammar-1*) *grammar-1-ctrl*)
@@ -65,11 +75,34 @@
 
 (deftest grammar-3-first-set-test ()
   (check
-   (equal (gethash :a (first-sets *grammar-3*)) (list :eps))))
+    (equal (gethash :a (first-sets *grammar-3*)) (list :eps))))
+
+(deftest grammar-4-first-set-test ()
+  (let ((g (gethash :g (first-sets *grammar-4*)))
+	(f (gethash :f (first-sets *grammar-4*))))
+    (check
+      (not (functionp (first g)))
+      (not (functionp (second g)))
+      (not (functionp (first f)))
+      (not (functionp (second f)))
+      (funcall (eval (first g)) 2)
+      (funcall (eval (second g)) 3)
+      (funcall (eval (first f)) 1)
+      (funcall (eval (second g)) -1))))
+
+(deftest grammar-5-first-set-test ()
+  (let ((f (gethash :f (first-sets *grammar-5*))))
+    (check
+      (not (functionp (first f)))
+      (not (functionp (second f)))
+      (funcall (eval (first f)) 1)
+      (funcall (eval (second f)) -1))))
 	      
 (deftest parser-test ()
   (combine-results
     (def-grammar-test)
     (grammar-1-first-set-test)
     (grammar-2-first-set-test)
-    (grammar-3-first-set-test)))
+    (grammar-3-first-set-test)
+    (grammar-4-first-set-test)
+    (grammar-5-first-set-test)))

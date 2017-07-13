@@ -20,6 +20,13 @@
   (and (not (listp symb))
        (not (non-term-p symb))))
 
+(defun predicate-p (symb)
+  (and (listp symb)
+       (or
+	(equal (car symb) 'function)
+	(equal (car symb) 'lambda))))
+       
+
 ;;; The only way to use the latter variables!
 (defmacro with-grammar ((grammar start-symbol) &body body)
   "Initiates the envrironment with the given GRAMMAR rules;
@@ -115,22 +122,24 @@ if the terminal is a PREDICATE, it will be applied to the seen token, and accept
 ;; DUMMY
 (defun follow-set (symb)
   (warn "FOLLOW-SET STILL IN DEVELOPMENT.")
-  nil
-  
-  )
+  nil)
 
 
 (defun first-set (symb)
   "Calculates the FIRST set of the current grammar stored in *GRAMMAR*."
   (let ((*depth* (1+ *depth*)))
     (cond
-      ;; I: SYMB is a terminal
-      ((term-p symb)
-       (when *debug* (format t "I <~a> ~s ~%" *depth* symb))
+      ;; I: SYMB is a predicate
+      ((predicate-p symb)
+       (when *debug* (format t "I' <~a> ~s ~%" *depth symb))
        (list symb))
-      ;; II: SYMB is a single, non-terminal symbol
-      ((non-term-p symb) 
+      ;; II: SYMB is a terminal
+      ((term-p symb)
        (when *debug* (format t "II <~a> ~s ~%" *depth* symb))
+       (list symb))
+      ;; III: SYMB is a single, non-terminal symbol
+      ((non-term-p symb) 
+       (when *debug* (format t "III <~a> ~s ~%" *depth* symb))
        (let ((found (gethash symb *first-sets*)))
 	 (if found found
 	     (let ((calculated
@@ -141,13 +150,13 @@ if the terminal is a PREDICATE, it will be applied to the seen token, and accept
 			       when (equal head symb)
 			       collect (first-set body)))))
 	       (setf (gethash symb *first-sets*) calculated)))))
-      ;; III: SYMB is NIL (an empty list)
+      ;; IV: SYMB is NIL (an empty list)
       ((not symb)
-       (when *debug* (format t "III <~a> ~s~%" *depth* symb))
-       (list :eps))
-      ;; IV: SYMB is a list of symbols
-      ((listp symb)
        (when *debug* (format t "IV <~a> ~s~%" *depth* symb))
+       (list :eps))
+      ;; V: SYMB is a list of symbols
+      ((listp symb)
+       (when *debug* (format t "V <~a> ~s~%" *depth* symb))
        (loop
 	  for h in symb
 	  ;; do (format t "H == ~s~%" h)
@@ -171,10 +180,10 @@ and STACK is the item stack of the parser.
   ...
   ((topp A)
    (cond
-     ((#'evenp look-ahead)
+     ((funcall (eval #'evenp) look-ahead)
       (push :c stack)
       (push #'evenp stack))
-     ((equal look-ahead :a)
+     ((equal :a look-ahead)
       (push :b stack)
       (push :a stack))))
   ...)"
