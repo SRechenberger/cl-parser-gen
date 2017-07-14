@@ -27,9 +27,6 @@
 	(equal (car symb) 'lambda))))
        
 
-(defun set-equal (set-1 set-2)
-  (and (subsetp set-1 set-2)
-       (subsetp set-2 set-1)))
 
 ;;; The only way to use the latter variables!
 (defmacro with-grammar (grammar  &body body)
@@ -128,50 +125,53 @@ if the terminal is a PREDICATE, it will be applied to the seen token, and accept
 
 
 
+(defparameter *first-stack* nil)
 
 (defun first-set (symb)
   "Calculates the FIRST set of the current grammar stored in *GRAMMAR*."
-  (let ((*depth* (1+ *depth*)))
-    (cond
-      ;; I: SYMB is a predicate
-      ((predicate-p symb)
-       (when *debug* (format t "I' <~a> ~s ~%" *depth symb))
-       (list symb))
-      ;; II: SYMB is a terminal
-      ((term-p symb)
-       (when *debug* (format t "II <~a> ~s ~%" *depth* symb))
-       (list symb))
-      ;; III: SYMB is a single, non-terminal symbol
-      ((non-term-p symb) 
-       (when *debug* (format t "III <~a> ~s ~%" *depth* symb))
-       (let ((found (gethash symb *first-sets*)))
-	 (if found found
-	     (let ((calculated
-		    (reduce #'union
-			    (loop
-			       for (head body) in *grammar*
-			       ;; do (format t "<~a> (HEAD BODY) == (~s ~s)~%" *depth* head body)
-			       when (equal head symb)
-			       collect (first-set body)))))
-	       (setf (gethash symb *first-sets*) calculated)))))
-      ;; IV: SYMB is NIL (an empty list)
-      ((not symb)
-       (when *debug* (format t "IV <~a> ~s~%" *depth* symb))
-       (list :eps))
-      ;; V: SYMB is a list of symbols
-      ((listp symb)
-       (when *debug* (format t "V <~a> ~s~%" *depth* symb))
-       (loop
-	  for h in symb
-	  ;; do (format t "H == ~s~%" h)
-	  for f = (first-set h)
-	  ;; do (format t "<~a> (FIRST-SET ~s) == ~s~%" *depth* h f)
-	  collect f into bucket
-	  ;; do (format t "<~a> BUCKET == ~s~%" *depth* bucket)
-	  while (member :eps f)
-	  finally (return (if (member :eps f)
-			      (reduce #'union bucket)
-			      (remove :eps (reduce #'union bucket)))))))))
+  (unless (member symb *first-stack*)
+    (let ((*depth* (1+ *depth*))
+	  (*first-stack* (cons symb *first-stack*)))
+      (cond
+	;; I: SYMB is a predicate
+	((predicate-p symb)
+	 (when *debug* (format t "I' <~a> ~s ~%" *depth symb))
+	 (list symb))
+	;; II: SYMB is a terminal
+	((term-p symb)
+	 (when *debug* (format t "II <~a> ~s ~%" *depth* symb))
+	 (list symb))
+	;; III: SYMB is a single, non-terminal symbol
+	((non-term-p symb) 
+	 (when *debug* (format t "III <~a> ~s ~%" *depth* symb))
+	 (let ((found (gethash symb *first-sets*)))
+	   (if found found
+	       (let ((calculated
+		      (reduce #'union
+			      (loop
+				 for (head body) in *grammar*
+				 ;; do (format t "<~a> (HEAD BODY) == (~s ~s)~%" *depth* head body)
+				 when (equal head symb)
+				 collect (first-set body)))))
+		 (setf (gethash symb *first-sets*) calculated)))))
+	;; IV: SYMB is NIL (an empty list)
+	((not symb)
+	 (when *debug* (format t "IV <~a> ~s~%" *depth* symb))
+	 (list :eps))
+	;; V: SYMB is a list of symbols
+	((listp symb)
+	 (when *debug* (format t "V <~a> ~s~%" *depth* symb))
+	 (loop
+	    for h in symb
+	    ;; do (format t "H == ~s~%" h)
+	    for f = (first-set h)
+	    ;; do (format t "<~a> (FIRST-SET ~s) == ~s~%" *depth* h f)
+	    collect f into bucket
+	    ;; do (format t "<~a> BUCKET == ~s~%" *depth* bucket)
+	    while (member :eps f)
+	    finally (return (if (member :eps f)
+				(reduce #'union bucket)
+				(remove :eps (reduce #'union bucket))))))))))
 
 
 ;; DUMMY
@@ -181,7 +181,7 @@ if the terminal is a PREDICATE, it will be applied to the seen token, and accept
   (when (not (non-term-p symb))
     (error (format nil "~s is no non-terminal." symb)))
   (format t "~S~%" *follow-stack*)
-  (when (not (member symb *follow-stack*))
+  (unless (member symb *follow-stack*)
     (let ((*follow-stack* (cons symb *follow-stack*)))
       (loop
 	 for (head body) in (remove-if-not #'(lambda (r) (member symb (second r))) *grammar*)

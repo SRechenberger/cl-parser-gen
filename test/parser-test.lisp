@@ -87,6 +87,11 @@
     (equal (rules *grammar-3*) *grammar-3-ctrl*)
     (equal (rules *grammar-6*) *grammar-6-ctrl*)))
 
+(define-grammar *grammar-7* :S
+  (:S --> :A)
+  (:A --> :B)
+  (:B --> :S))
+
 (define-case-test (first-set-test () :all-test-name first-set-tests)
     (*grammar-1*
      (check
@@ -127,7 +132,12 @@
      (set-equal (gethash :T (first-sets *grammar-6*)) (list #\( :id))
      (set-equal (gethash :F (first-sets *grammar-6*)) (list #\( :id))
      (set-equal (gethash :X (first-sets *grammar-6*)) (list #\+ :eps))
-     (set-equal (gethash :Y (first-sets *grammar-6*)) (list #\* :eps)))))
+     (set-equal (gethash :Y (first-sets *grammar-6*)) (list #\* :eps))))
+  (*grammar-7*
+   (check
+     (not (gethash :S (first-sets *grammar-7*)))
+     (not (gethash :A (first-sets *grammar-7*)))
+     (not (gethash :B (first-sets *grammar-7*))))))
      
 
 (defun has-follow-set (symb set grammar)
@@ -161,7 +171,12 @@
        (:X (list #\) :$))
        (:Y (list #\+ #\) :$))
        (:T (list #\+ :$ #\)))
-       (:F (list #\* #\+ #\) :$)))))
+       (:F (list #\* #\+ #\) :$))))
+    (*grammar-7*
+     (check-follow-sets *grammar-7*
+       (:S (list :$))
+       (:A (list :$))
+       (:B (list :$)))))
 
 
 (define-test parser-test ()
