@@ -27,6 +27,10 @@
 	(equal (car symb) 'lambda))))
        
 
+(defun set-equal (set-1 set-2)
+  (and (subsetp set-1 set-2)
+       (subsetp set-2 set-1)))
+
 ;;; The only way to use the latter variables!
 (defmacro with-grammar (grammar  &body body)
   "Initiates the envrironment with the given GRAMMAR rules;
@@ -122,10 +126,7 @@ if the terminal is a PREDICATE, it will be applied to the seen token, and accept
 	 rules))))
 		    
 
-;; DUMMY
-(defun follow-set (symb)
-  (warn "FOLLOW-SET STILL IN DEVELOPMENT.")
-  nil)
+
 
 
 (defun first-set (symb)
@@ -172,6 +173,32 @@ if the terminal is a PREDICATE, it will be applied to the seen token, and accept
 			      (reduce #'union bucket)
 			      (remove :eps (reduce #'union bucket)))))))))
 
+
+;; DUMMY
+(defparameter *follow-stack* nil)
+
+(defun follow-set (symb)
+  (when (not (non-term-p symb))
+    (error (format nil "~s is no non-terminal." symb)))
+  (format t "~S~%" *follow-stack*)
+  (when (not (member symb *follow-stack*))
+    (let ((*follow-stack* (cons symb *follow-stack*)))
+      (loop
+	 for (head body) in (remove-if-not #'(lambda (r) (member symb (second r))) *grammar*)
+	 do (loop
+	       for s on body
+	       do (progn
+		    (when (and (non-term-p (first s))
+			       (second s))
+		      (dolist (f (remove :eps (first-set (second s))))
+			(pushnew f (gethash (first s) *follow-sets*))))
+		    (when (and (non-term-p (first s))
+			       (or (not (second s))
+				   (member :eps (first-set (second s)))))
+		      (dolist (f (follow-set head))
+			(pushnew f (gethash (first s) *follow-sets*)))))))))
+  (gethash symb *follow-sets*))
+  
 (defmacro define-ll-1-parser (grammar)
   "Given some rules like
 (A --> #'evenp :c)

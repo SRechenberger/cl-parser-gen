@@ -1,5 +1,9 @@
 (in-package :de.srechenberger.cl-parser-gen.parser-test)
 
+(defun set-equal (set-1 set-2)
+  (and (subsetp set-1 set-2)
+       (subsetp set-2 set-1)))
+
 (defparameter *grammar-1-ctrl*
   (list
    (list 'A (list 'B 'C))
@@ -54,6 +58,17 @@
   (:f --> (lambda (x) (< 0 x)) :pos)
   (:f --> (lambda (x) (< x 0)) :neg))
 
+
+(define-grammar *grammar-6* :E
+  (:E --> :T :X)
+  (:X --> #\+ :T :X)
+  (:X --> :eps)
+  (:T --> :F :Y)
+  (:Y --> #\* :F :Y)
+  (:Y --> :eps)
+  (:F --> #\( :E #\))
+  (:F --> :id))
+
 (define-test def-grammar-test ()
   (check
     (equal (rules *grammar-1*) *grammar-1-ctrl*)
@@ -61,50 +76,84 @@
     (equal (rules *grammar-3*) *grammar-3-ctrl*)))
 
 (define-case-test (first-set-test () :all-test-name first-set-tests)
-  (*grammar-1*
-   (check
-     (equal (gethash 'A (first-sets *grammar-1*)) (list :c :d))
-     (equal (gethash 'B (first-sets *grammar-1*)) (list :c :eps))
-     (equal (gethash 'C (first-sets *grammar-1*)) (list :c))))
+    (*grammar-1*
+     (check
+      (equal (gethash 'A (first-sets *grammar-1*)) (list :c :d))
+      (equal (gethash 'B (first-sets *grammar-1*)) (list :c :eps))
+      (equal (gethash 'C (first-sets *grammar-1*)) (list :c))))
   (*grammar-2*
    (check
-     (equal (gethash :expr (first-sets *grammar-2*)) (list :id #\())
-     (equal (gethash :sum (first-sets *grammar-2*)) (list :id #\())
-     (equal (gethash :product (first-sets *grammar-2*)) (list :id #\())
-     (equal (gethash :value (first-sets *grammar-2*)) (list :id #\())))
+    (equal (gethash :expr (first-sets *grammar-2*)) (list :id #\())
+    (equal (gethash :sum (first-sets *grammar-2*)) (list :id #\())
+    (equal (gethash :product (first-sets *grammar-2*)) (list :id #\())
+    (equal (gethash :value (first-sets *grammar-2*)) (list :id #\())))
   (*grammar-3*
    (check
-     (equal (gethash :a (first-sets *grammar-3*)) (list :eps))))
+    (equal (gethash :a (first-sets *grammar-3*)) (list :eps))))
   (*grammar-4*
    (let ((g (gethash :g (first-sets *grammar-4*)))
 	 (f (gethash :f (first-sets *grammar-4*))))
      (check
-       (not (functionp (first g)))
-       (not (functionp (second g)))
-       (not (functionp (first f)))
-       (not (functionp (second f)))
-       (funcall (eval (first g)) 2)
-       (funcall (eval (second g)) 3)
-       (funcall (eval (first f)) 1)
-       (funcall (eval (second g)) -1))))
+      (not (functionp (first g)))
+      (not (functionp (second g)))
+      (not (functionp (first f)))
+      (not (functionp (second f)))
+      (funcall (eval (first g)) 2)
+      (funcall (eval (second g)) 3)
+      (funcall (eval (first f)) 1)
+      (funcall (eval (second g)) -1))))
   (*grammar-5*
    (let ((f (gethash :f (first-sets *grammar-5*))))
      (check
-       (not (functionp (first f)))
-       (not (functionp (second f)))
-       (funcall (eval (first f)) 1)
-       (funcall (eval (second f)) -1)))))
+      (not (functionp (first f)))
+      (not (functionp (second f)))
+      (funcall (eval (first f)) 1)
+      (funcall (eval (second f)) -1))))
+  (*grammar-6*
+   (check
+     (set-equal (gethash :E (first-sets *grammar-6*)) (list #\( :id))
+     (set-equal (gethash :T (first-sets *grammar-6*)) (list #\( :id))
+     (set-equal (gethash :F (first-sets *grammar-6*)) (list #\( :id))
+     (set-equal (gethash :X (first-sets *grammar-6*)) (list #\+ :eps))
+     (set-equal (gethash :Y (first-sets *grammar-6*)) (list #\* :eps)))))
+     
 
-(define-test-for-all end-of-input-tests
-    (grammar (*grammar-1* *grammar-2* *grammar-3* *grammar-4* *grammar-5*))
-    ()
-  (check
-    (equal (gethash (start-symbol grammar)
-		    (follow-sets grammar))
-	   (list :$))))
+(defun has-follow-set (symb set grammar)
+  `(set-equal (gethash ',symb (follow-sets ,grammar)) ,set))
+
+(defmacro check-follow-sets (grammar &body body)
+  `(check
+     ,@(loop
+	  for (symb set) in body
+	  collect `(set-equal (gethash ,symb (follow-sets ,grammar)) ,set))))
+     
+
+(define-case-test (follow-set-test () :all-test-name follow-set-tests)
+    (*grammar-1*
+     (check-follow-sets *grammar-1*
+       ('A (list :$))
+       ('B (list :c))
+       ('C (list :c :$))))
+    (*grammar-2*
+     (check-follow-sets *grammar-2*
+       (:expr (list #\) :$))
+       (:sum (list #\) :$))
+       (:product (list #\- #\+ #\) :$))
+       (:value (list #\- #\+ #\) :$))))
+    (*grammar-3*
+     (check-follow-sets *grammar-3*
+       (:a (list :$))))
+    (*grammar-6*
+     (check-follow-sets *grammar-6*
+       (:E (list #\) :$))
+       (:X (list #\) :$))
+       (:Y (list #\+ #\) :$))
+       (:T (list #\+ :$ #\)))
+       (:F (list #\* #\+ #\) :$)))))
+
 
 (define-test parser-test ()
   (combine-results
     (def-grammar-test)
     (first-set-tests)
-    (end-of-input-tests)))
+    (follow-set-tests)))
