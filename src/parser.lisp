@@ -28,7 +28,7 @@
        
 
 ;;; The only way to use the latter variables!
-(defmacro with-grammar ((grammar start-symbol) &body body)
+(defmacro with-grammar (grammar  &body body)
   "Initiates the envrironment with the given GRAMMAR rules;
 if any of the variables *FIRST-SETS*, *FOLLOW-SETS*, *NON-TERMINALS*, or *GRAMMAR* is set,
 an error is throws (via ASSERT)"
@@ -38,7 +38,7 @@ an error is throws (via ASSERT)"
 			   *grammar*)))
 	  (let ((*grammar* ,grammar)
 		(*non-terminals* (mapcar #'first ,grammar))
-		(*start-symbol* ',start-symbol)
+		(*start-symbol* nil)
 		(*first-sets* (make-hash-table))
 		(*follow-sets* (make-hash-table)))
 	    ,@body)))
@@ -96,9 +96,12 @@ If the parser is generated, TERMINALS will be compared with a then given EQUAL p
 if the terminal is a PREDICATE, it will be applied to the seen token, and accepted on a non nil result."
   (let* ((correct-rules (make-rules rules))
 	 (nts (remove-duplicates (mapcar #'first correct-rules)))
-	 (first-follow (with-grammar (correct-rules s-symbol)
+	 (first-follow (with-grammar correct-rules
 			 (dolist (nt nts)
 			   (first-set nt))
+			 (setf *start-symbol* s-symbol)
+			 (when *debug* (format t "*START-SYMBOL* ==  ~S ~%" *start-symbol*))
+			 (pushnew :$ (gethash s-symbol *follow-sets*))
 			 (dolist (nt nts)
 			   (follow-set nt))
 			 (list *first-sets* *follow-sets*))))

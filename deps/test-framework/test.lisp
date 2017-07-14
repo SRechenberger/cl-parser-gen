@@ -2,7 +2,7 @@
 
 (defvar *test-name* nil)
 
-(defmacro deftest (name parameters &body body)
+(defmacro define-test (name parameters &body body)
   "Define a test function. Within a test function we can call other
 test functions or use `check' to run individual test cases."
   `(defun ,name ,parameters
