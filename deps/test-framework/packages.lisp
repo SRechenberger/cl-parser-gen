@@ -4,4 +4,6 @@
   (:use :common-lisp :com.gigamonkeys.macro-utilities)
   (:export :define-test
 	   :check
-	   :combine-results))
+	   :combine-results
+	   :define-case-test
+	   :define-test-for-all))
