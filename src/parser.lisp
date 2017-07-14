@@ -130,6 +130,7 @@ if the terminal is a PREDICATE, it will be applied to the seen token, and accept
 (defun first-set (symb)
   "Calculates the FIRST set of the current grammar stored in *GRAMMAR*."
   (unless (member symb *first-stack*)
+    (when *debug* (format t "~s~%" *first-stack*))
     (let ((*depth* (1+ *depth*))
 	  (*first-stack* (cons symb *first-stack*)))
       (cond
@@ -180,7 +181,7 @@ if the terminal is a PREDICATE, it will be applied to the seen token, and accept
 (defun follow-set (symb)
   (when (not (non-term-p symb))
     (error (format nil "~s is no non-terminal." symb)))
-  (format t "~S~%" *follow-stack*)
+  (when *debug* (format t "~S~%" *follow-stack*))
   (unless (member symb *follow-stack*)
     (let ((*follow-stack* (cons symb *follow-stack*)))
       (loop
