@@ -69,11 +69,23 @@
   (:F --> #\( :E #\))
   (:F --> :id))
 
+(defparameter *grammar-6-ctrl*
+  (list
+   (list :E (list :T :X))
+   (list :X (list #\+ :T :X))
+   (list :X (list :eps))
+   (list :T (list :F :Y))
+   (list :Y (list #\* :F :Y))
+   (list :Y (list :eps))
+   (list :F (list #\( :E #\)))
+   (list :F (list :id))))
+
 (define-test def-grammar-test ()
   (check
     (equal (rules *grammar-1*) *grammar-1-ctrl*)
     (equal (rules *grammar-2*) *grammar-2-ctrl*)
-    (equal (rules *grammar-3*) *grammar-3-ctrl*)))
+    (equal (rules *grammar-3*) *grammar-3-ctrl*)
+    (equal (rules *grammar-6*) *grammar-6-ctrl*)))
 
 (define-case-test (first-set-test () :all-test-name first-set-tests)
     (*grammar-1*
