@@ -19,6 +19,7 @@
 (defun term-p (symb)
   (and (not (listp symb))
        (not (non-term-p symb))))
+  ;;     (not (equal symb :eps))))
 
 (defun predicate-p (symb)
   (and (listp symb)
@@ -175,7 +176,6 @@ if the terminal is a PREDICATE, it will be applied to the seen token, and accept
 				(remove :eps (reduce #'union bucket))))))))))
 
 
-;; DUMMY
 (defparameter *follow-stack* nil)
 
 (defun follow-set (symb)
@@ -199,7 +199,60 @@ if the terminal is a PREDICATE, it will be applied to the seen token, and accept
 		      (dolist (f (follow-set head))
 			(pushnew f (gethash (first s) *follow-sets*)))))))))
   (gethash symb *follow-sets*))
-  
+
+(defmacro forall-in (sym sequence &body body)
+  `(every #'(lambda (,sym) ,@body) ,sequence)) 
+
+(defmacro exists-in (sym sequence &body body)
+  `(some #'(lambda (,sym) ,@body) ,sequence))
+
+(defvar *eps-p-stack* nil)
+;; eps(alpha) =
+;; FORALL a in alpha .
+;;   a is a non terminal AND EXISTS (a --> beta) in P . eps(beta)
+(defun eps-p (alpha grammar)
+  (when *debug* (format t "STACK ~s~%" *eps-p-stack*))
+  (or (equal alpha (list :eps))
+      (forall-in a alpha
+	(and (member a (non-terminals grammar))
+	     (exists-in rule (rules grammar)
+	       (when *debug* (format t "RULE ~s~%" rule))
+	       (and (equal (first rule) a)
+		    (not (member a *eps-p-stack*))
+		    (let ((*eps-p-stack* (cons a *eps-p-stack*)))
+		      (eps-p (second rule) grammar))))))))
+
+    
+
+(defun make-parser-table (grammar)
+  (let ((parser-table (make-hash-table :test #'equal)))
+    (with-grammar (rules grammar)
+      (dolist (rule (rules grammar))
+	(dolist (symb (first-set (second rule)))
+	  (when (gethash (list (first rule) symb) parser-table)
+	    (error
+	     (format
+	      nil
+	      "I Entry (~s,~s) already [~s] (new: ~s). Your grammar is not LL(1)!"
+	      (first rule)
+	      symb
+	      (gethash (list (first rule) symb) parser-table)
+	      (second rule))))
+	  (setf (gethash (list (first rule) symb) parser-table) (second rule)))
+	(when (eps-p (second rule) grammar)
+	  (dolist (symb (follow-set (first rule)))	  
+	    (when (gethash (cons (first rule) symb) parser-table)
+	      (error
+	       (format
+		nil
+		"II Entry (~s,~s) already [~s] (new: ~s). Your grammar is not LL(1)!"
+		(first rule)
+		symb
+		(gethash (list (first rule) symb) parser-table)
+		(second rule))))
+	    (setf (gethash (list (first rule) symb) parser-table) (second rule)))))
+      parser-table)))
+
 (defmacro define-ll-1-parser (grammar)
   "Given some rules like
 (A --> #'evenp :c)

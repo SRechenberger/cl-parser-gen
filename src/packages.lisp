@@ -17,4 +17,6 @@
 	   :rules
 	   :start-symbol
 	   :-->
-	   :define-grammar))
+	   :define-grammar
+	   :make-parser-table
+	   :eps-p))

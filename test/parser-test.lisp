@@ -92,6 +92,26 @@
   (:A --> :B)
   (:B --> :S))
 
+(define-grammar *grammar-8* :S
+  (:S --> :E)
+  (:E --> :T :E1)
+  (:E1 --> #\+ :E)
+  (:E1 --> :eps)
+  (:T --> :F :T1)
+  (:T1 --> #\* :T)
+  (:T1 --> :eps)
+  (:F  --> #\( :E #\))
+  (:F  --> :id))
+
+(defun has-first-set (symb set grammar)
+  `(set-equal (gethash ',symb (first-sets ,grammar)) ,set))
+
+(defmacro check-first-sets (grammar &body body)
+  `(check
+     ,@(loop
+	  for (symb set) in body
+	  collect `(set-equal (gethash ,symb (first-sets ,grammar)) ,set))))
+
 (define-case-test (first-set-test () :all-test-name first-set-tests)
     (*grammar-1*
      (check
@@ -137,7 +157,15 @@
    (check
      (not (gethash :S (first-sets *grammar-7*)))
      (not (gethash :A (first-sets *grammar-7*)))
-     (not (gethash :B (first-sets *grammar-7*))))))
+     (not (gethash :B (first-sets *grammar-7*)))))
+  (*grammar-8*
+   (check-first-sets *grammar-8*
+     (:S (list #\( :id))
+     (:E (list #\( :id))
+     (:T (list #\( :id))
+     (:F (list #\( :id))
+     (:T1 (list #\* :eps))
+     (:E1 (list #\+ :eps)))))
      
 
 (defun has-follow-set (symb set grammar)
@@ -176,7 +204,15 @@
      (check-follow-sets *grammar-7*
        (:S (list :$))
        (:A (list :$))
-       (:B (list :$)))))
+       (:B (list :$))))
+    (*grammar-8*
+     (check-follow-sets *grammar-8*
+       (:S (list :$))
+       (:E (list #\) :$))
+       (:E1 (list #\) :$))
+       (:T (list #\+ #\) :$))
+       (:T1 (list #\+ #\) :$))
+       (:F (list #\* #\+ #\) :$)))))
 
 
 (define-test parser-test ()
