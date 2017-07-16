@@ -23,7 +23,7 @@ test functions or use `check' to run individual test cases."
 
 (defun report-result (result form)
   "Report the results of a single test case. Called by `check'."
-  (format t "~:[FAIL~;pass~] ... ~a: ~a~%" result *test-name* form)
+  (format t "~:[FAIL~;pass~] ... ~a: ~s~%" result *test-name* form)
   result)
 
 (defmacro define-case-test ((name parameters &key (all-test-name nil atn-p)) &body test-cases)

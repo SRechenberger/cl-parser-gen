@@ -101,7 +101,9 @@
   (:T1 --> #\* :T)
   (:T1 --> :eps)
   (:F  --> #\( :E #\))
-  (:F  --> :id))
+  (:F  --> :id)
+  (:F --> :num))
+
 
 (defun has-first-set (symb set grammar)
   `(set-equal (gethash ',symb (first-sets ,grammar)) ,set))
@@ -160,10 +162,10 @@
      (not (gethash :B (first-sets *grammar-7*)))))
   (*grammar-8*
    (check-first-sets *grammar-8*
-     (:S (list #\( :id))
-     (:E (list #\( :id))
-     (:T (list #\( :id))
-     (:F (list #\( :id))
+     (:S (list #\( :id :num))
+     (:E (list #\( :id :num))
+     (:T (list #\( :id :num))
+     (:F (list #\( :id :num))
      (:T1 (list #\* :eps))
      (:E1 (list #\+ :eps)))))
      
@@ -214,9 +216,46 @@
        (:T1 (list #\+ #\) :$))
        (:F (list #\* #\+ #\) :$)))))
 
+(define-ll-1-parser grammar-8-parser *grammar-8*)
+
+(defmacro define-accept-test (name parser parameters &body inputs)
+  `(define-test ,name ,parameters
+    (check
+      ,@(mapcar #'(lambda (input) `(,parser ,input)) inputs))))
+
+(defmacro define-reject-test (name parser parameters &body inputs)
+  `(define-test ,name ,parameters
+     (check
+       ,@(mapcar #'(lambda (input) `(not (,parser ,input))) inputs))))
+
+(define-accept-test grammar-8-accept-test grammar-8-parser ()
+  (list :id :$)
+  (list :num :$)
+  (list :num #\+ :num :$)
+  (list :id #\+ :id :$)
+  (list #\( :id #\) #\+ #\( #\( :id #\) #\) :$)
+  (list #\( :id #\* :id #\) :$))
+
+(define-reject-test grammar-8-reject-test grammar-8-parser ()
+  (list :$)
+  (list #\+ :num)
+  (list #\* :num)
+  (list #\( :num :$)
+  (list #\) :$)
+  (list #\( #\( #\( :id #\+ :id #\) #\+ :num #\) :$))
+  
+(define-test accept-tests ()
+  (combine-results
+    (grammar-8-accept-test)))
+
+(define-test reject-tests ()
+  (combine-results
+    (grammar-8-reject-test)))
 
 (define-test parser-test ()
   (combine-results
     (def-grammar-test)
     (first-set-tests)
-    (follow-set-tests)))
+    (follow-set-tests)
+    (accept-tests)
+    (reject-tests)))
