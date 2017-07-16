@@ -199,33 +199,32 @@ if the terminal is a PREDICATE, it will be applied to the seen token, and accept
 
 (defun make-parser-table (grammar)
   (let ((parser-table (make-hash-table :test #'equal)))
-    (with-grammar (rules grammar)
-      (dolist (rule (rules grammar))
-	(dolist (symb (remove :eps (first-set (second rule) grammar)))
-	  (when (gethash (list (first rule) symb) parser-table)
+    (dolist (rule (rules grammar))
+      (dolist (symb (remove :eps (first-set (second rule) grammar)))
+	(when (gethash (list (first rule) symb) parser-table)
+	  (error
+	   (format
+	    nil
+	    "I Entry (~s,~s) already [~s] (new: ~s). Your grammar is not LL(1)!"
+	    (first rule)
+	    symb
+	    (gethash (list (first rule) symb) parser-table)
+	    (second rule))))
+	(setf (gethash (list (first rule) symb) parser-table) (second rule)))
+      (when (eps-p (second rule) grammar)
+	(dolist (symb (follow-set (first rule) grammar))
+	  ;;(format t "FOLLOW(~s) == ~s~%" (first rule) (follow-set (first rule) grammar))
+	  (when (gethash (cons (first rule) symb) parser-table)
 	    (error
 	     (format
 	      nil
-	      "I Entry (~s,~s) already [~s] (new: ~s). Your grammar is not LL(1)!"
+	      "II Entry (~s,~s) already [~s] (new: ~s). Your grammar is not LL(1)!"
 	      (first rule)
 	      symb
 	      (gethash (list (first rule) symb) parser-table)
 	      (second rule))))
-	  (setf (gethash (list (first rule) symb) parser-table) (second rule)))
-	(when (eps-p (second rule) grammar)
-	  (dolist (symb (follow-set (first rule) grammar))
-	    ;;(format t "FOLLOW(~s) == ~s~%" (first rule) (follow-set (first rule) grammar))
-	    (when (gethash (cons (first rule) symb) parser-table)
-	      (error
-	       (format
-		nil
-		"II Entry (~s,~s) already [~s] (new: ~s). Your grammar is not LL(1)!"
-		(first rule)
-		symb
-		(gethash (list (first rule) symb) parser-table)
-		(second rule))))
-	    (setf (gethash (list (first rule) symb) parser-table) (second rule)))))
-      parser-table)))
+	  (setf (gethash (list (first rule) symb) parser-table) (second rule)))))
+    parser-table))
 
 #|
   Given some rules like

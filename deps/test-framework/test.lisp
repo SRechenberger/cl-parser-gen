@@ -12,7 +12,9 @@ test functions or use `check' to run individual test cases."
 (defmacro check (&body forms)
   "Run each expression in `forms' as a test case."
   `(combine-results
-    ,@(loop for f in forms collect `(report-result ,f ',f))))
+     ,@(loop
+	  for f in forms
+	  collect `(report-result ,f ',f))))
 
 (defmacro combine-results (&body forms)
   "Combine the results (as booleans) of evaluating `forms' in order."
