@@ -2,6 +2,7 @@
 (ql:register-local-projects)
 
 (ql:quickload :cl-parser-gen-test)
+
 (handler-case
     (if (test:test-all)
 	(uiop:quit 0)

@@ -96,8 +96,9 @@ if the terminal is a PREDICATE, it will be applied to the seen token, and accept
 	 s-symbol
 	 nts
 	 rules))))
-		    
+  
 
+	 
 
 
 (defparameter *first-stack* nil)
@@ -268,83 +269,101 @@ and STACK is the item stack of the parser.
 	  (mapcar #'debulk list))
       list))
 
-(defmacro define-ll-1-parser (name grammar &key reject-by-error debulk-result)
-  (with-gensyms (work-stack result-stack idx len top input reject)
-    (let* ((grm (if (symbolp grammar)
-		    (eval grammar)
-		    grammar))
-	   (p-table (make-parser-table grm)))
-      (when *debug* (maphash #'(lambda (k v) (format t "[~s] ==> ~s~%" k v)) p-table))
-      `(defun ,name (,input &key (log-stream *standard-output* log-p) stepwise)
-	 (do* ((,work-stack (list ,(start-symbol grm) :$))
-	       (,result-stack (list (cons 2 nil)))
-	       ;; The current input position
-	       (,idx 0)
-	       (,len (length ,input))
-	       (,top (car ,work-stack) (car ,work-stack))
-	       (,reject nil))
-	      ;; If INPUT is empty
-	      ((or (>= ,idx ,len)
-		   ,reject)
-	       ;; and the WORK-STACK is empty
-	       (cond
-		 (,reject nil)
-		 ((not ,work-stack)
-		   ;; return the result
-		   ,(if debulk-result
-			`(debulk (cdar ,result-stack))
-			`(cdar ,result-stack)))
-		 (t ,(when reject-by-error `(error "FUCK")))))
-
-	   (when (or stepwise log-p)
-	     (format log-stream "STACK: ~s~%INPUT: ~s~%RESULT: ~s~%"
-		     ,work-stack (subseq ,input ,idx) ,result-stack))
-	   
-	   (when stepwise
-	     (unless (y-or-n-p "Continue?") (return nil)))
-	   
-	   (setf ,result-stack (reduce-result-stack ,result-stack))
-	   (cond
-	     ((not (member ,top (list ,@(non-terminals grm))))
-	      (if (or (equal (elt ,input ,idx) ,top)
-		      (equal :eps ,top))
-		  (progn
-		    ;(unless nil ;(equal :eps ,top)
-		    (unless (equal :eps ,top)
-		      (setf (cdar ,result-stack)
-			    (append (cdar ,result-stack)
-				    (list (elt, input ,idx))))
-		      ;; (push (elt ,input ,idx) (cdar ,result-stack))
-		      (incf ,idx))
-		    (pop ,work-stack)
-		    (decf (caar ,result-stack)))
-		  ,(if reject-by-error
-		     `(error (format nil "Expected ~s, but found ~s at position ~d."
-				     ,top
-				     (elt ,input ,idx)
-				     ,idx))
-		     `(return nil))))
-		    
-	     ,@(loop
-		  for k being the hash-keys in p-table
-		  for v being the hash-values in p-table
-		  collect
-		    (if (predicate-p (second k))
-			`((and (equal ,(first k) ,top)
-			       (funcall ,(second k) (elt ,input ,idx)))
-			  (pop ,work-stack)
-			  (setf ,work-stack (append (list ,@v) ,work-stack))
-			  (push (cons ,(length v) nil) ,result-stack))
-			`((and (equal ,(first k) ,top)
-			       (equal ,(second k) (elt ,input, idx)))
-			  (pop ,work-stack)
-			  (setf ,work-stack (append (list ,@v) ,work-stack))
-			  (push (cons ,(length v) nil) ,result-stack))))
-	     (t ,(if reject-by-error
-		   `(error (format nil "No entry in the parser table for (~s,~s)."
-			       ,top
-			       (elt ,input ,idx)))
-		   `(return nil)))))))))
+(defmacro define-ll-1-parser (name s-symbol &body rules)
+    (with-gensyms (work-stack result-stack idx len top input reject)
+      (let* ((correct-rules (make-rules rules))
+	     (nts (remove-duplicates (mapcar #'first correct-rules)))
+	     (grm (let ((g (make-instance
+			    'grammar
+			    :start-symbol s-symbol
+			    :non-terminals nts
+			    :rules correct-rules
+			    :first-sets (make-hash-table)
+			    :follow-sets (make-hash-table))))
+		    (dolist (nt nts)
+		      (first-set nt g))
+		    (pushnew :$ (gethash (start-symbol g) (follow-sets g)))
+		    (dolist (nt nts)
+		      (follow-set nt g))
+		    g))
+	     (p-table (make-parser-table grm)))
+	(when *debug* (maphash #'(lambda (k v) (format t "[~s] ==> ~s~%" k v)) p-table))
+	`(defun ,name (,input &key
+				(log-stream *standard-output* log-p)
+				stepwise
+				reject-by-error
+				debulk-result)
+	   (do* ((,work-stack (list ,(start-symbol grm) :$))
+		 (,result-stack (list (cons 2 nil)))
+		 ;; The current input position
+		 (,idx 0)
+		 (,len (length ,input))
+		 (,top (car ,work-stack) (car ,work-stack))
+		 (,reject nil))
+		;; If INPUT is empty
+		((or (>= ,idx ,len)
+		     ,reject)
+		 ;; and the WORK-STACK is empty
+		 (cond
+		   (,reject nil)
+		   ((not ,work-stack)
+		    ;; return the result
+		    (if debulk-result
+			 (debulk (cdar ,result-stack))
+			 (cdar ,result-stack)))
+		   (t (when reject-by-error (error "FUCK")))))
+	     
+	     (when (or stepwise log-p)
+	       (format log-stream "TOP: ~s~%STACK: ~s~%INPUT: ~s~%RESULT: ~s~%"
+		       ,top ,work-stack (subseq ,input ,idx) ,result-stack))
+	     
+	     (when stepwise
+	       (unless (y-or-n-p "Continue?") (return nil)))
+	     
+	     (setf ,result-stack (reduce-result-stack ,result-stack))
+	     (cond
+	       ;; Try to consume input
+	       ((not (member ,top (list ,@(non-terminals grm))))
+		(if (or (equal (elt ,input ,idx) ,top)
+			(and (functionp ,top)
+			     (funcall ,top (elt ,input ,idx)))
+			(equal :eps ,top))
+		    (progn
+		      (unless (equal :eps ,top)
+			(setf (cdar ,result-stack)
+			      (append (cdar ,result-stack)
+				      (list (elt, input ,idx))))
+			(incf ,idx))
+		      (pop ,work-stack)
+		      (decf (caar ,result-stack)))
+		    (if reject-by-error
+			 (error (format nil "Expected ~s, but found ~s at position ~d."
+					,top
+					(elt ,input ,idx)
+					,idx))
+			 (return nil))))
+	       ;; Expansion
+	       ,@(loop
+		    for k being the hash-keys in p-table
+		    for v being the hash-values in p-table
+		    collect
+		      (if (predicate-p (second k))
+			  `((and (equal ,(first k) ,top)
+				 (funcall ,(second k) (elt ,input ,idx)))
+			    (pop ,work-stack)
+			    (setf ,work-stack (append (list ,@v) ,work-stack))
+			    (push (cons ,(length v) nil) ,result-stack))
+			  `((and (equal ,(first k) ,top)
+				 (equal ,(second k) (elt ,input, idx)))
+			    (pop ,work-stack)
+			    (setf ,work-stack (append (list ,@v) ,work-stack))
+			    (push (cons ,(length v) nil) ,result-stack))))
+	       ;; Error
+	       (t (if reject-by-error
+		       (error (format nil "No entry in the parser table for (~s,~s)."
+				      ,top
+				      (elt ,input ,idx)))
+		       (return nil)))))))))
        
      
 
