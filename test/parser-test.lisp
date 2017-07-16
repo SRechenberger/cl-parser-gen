@@ -317,19 +317,41 @@
   (list #\( #\( 3 #\+ 4 #\) #\+ :a #\) :$)
   (list #\( #\(  #\( 5 #\+ :a #\) #\+ 6 #\) #\+ 7 #\) :$))
 
+;;; Grammar 11:
+;;; Testing lambda functions as tokens
+(define-ll-1-parser grammar-11-parser :S
+  (:S --> :ints)
+  (:ints --> :eps)
+  (:ints --> #'(lambda (tok) (and (integerp tok) (< 0 tok 10))) :ints))
+
+(define-accept-test grammar-11-accept-test grammar-11-parser ()
+  (list :$)
+  (list 1 :$)
+  (list 1 2 :$)
+  (list 1 2 3 4 5 6 7 8 9 :$))
+
+(define-reject-test grammar-11-reject-test grammar-11-parser ()
+  (list 10 :$)
+  (list 1 10 :$)
+  (list 1 2 10 :$)
+  (list :a :b :c :$)
+  (list 1 :a :b :c :$))
+
 ;;; Test combinations
 
 (define-test accept-tests ()
   (combine-results
     (grammar-8-accept-test)
     (grammar-9-accept-test)
-    (grammar-10-accept-test)))
+    (grammar-10-accept-test)
+    (grammar-11-accept-test)))
 
 (define-test reject-tests ()
   (combine-results
     (grammar-8-reject-test)
     (grammar-9-reject-test)
-    (grammar-10-reject-test)))
+    (grammar-10-reject-test)
+    (grammar-11-reject-test)))
 
 (define-test parser-test ()
   (combine-results
