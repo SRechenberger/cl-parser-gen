@@ -9,4 +9,4 @@ install:
   - curl -L https://github.com/luismbo/cl-travis/raw/master/install.sh | sh
 
 script:
-  - sbcl --load test/runtest.lisp
+  - sbcl --noinform --load test/runtest.lisp
