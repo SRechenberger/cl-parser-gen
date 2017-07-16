@@ -9,7 +9,6 @@
   :licence "BSD"
   :description "Utilities for writing macros"
   :long-description ""
-  :pathname "deps/macro-utilities/"
   :components
   ((:file "packages")
    (:file "macro-utilities" :depends-on ("packages")))

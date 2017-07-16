@@ -2,6 +2,20 @@
 
 (defvar *test-name* nil)
 
+(defparameter *passed-tests* (make-hash-table :test 'equal))
+(defparameter *failed-tests* (make-hash-table :test 'equal))
+(defparameter *test-output* *standard-output*)
+(defparameter *printed-results* 0)
+(defparameter *test-cnt* 0)
+(defparameter *failed-cnt* 0)
+(defparameter *passed-cnt* 0)
+
+(defmacro red (string)
+  `(format nil "~c[31m~a~c[0m" #\ESC ,string #\ESC))
+
+(defmacro green (string)
+  `(format nil "~c[32m~a~c[0m" #\ESC ,string #\ESC))
+
 (defmacro define-test (name parameters &body body)
   "Define a test function. Within a test function we can call other
 test functions or use `check' to run individual test cases."
@@ -25,8 +39,40 @@ test functions or use `check' to run individual test cases."
 
 (defun report-result (result form)
   "Report the results of a single test case. Called by `check'."
-  (format t "~:[FAIL~;pass~]... ~a:~%     ~s~%" result *test-name* form)
+  (format *test-output* "~:[~a~;~a~]" result (if result (green ".") (red "!")))
+  (incf *printed-results*)
+  (incf *test-cnt*)
+  (when (< 32 *printed-results*)
+    (setf *printed-results* 0)
+    (format *test-output* "~&"))
+  (if result
+      (progn
+	(push form (gethash *test-name* *passed-tests*))
+	(incf *passed-cnt*))
+      (progn
+	(push form (gethash *test-name* *failed-tests*))
+	(incf *failed-cnt*)))
   result)
+
+(defun print-failed-tests (stream)
+  (maphash
+   #'(lambda (testname cases)
+	(format stream
+		"~a ~A~%~{  ~S~%~}~&"
+		(red "-")
+		testname
+		cases))
+   *failed-tests*))
+
+(defun print-passed-tests (stream)
+  (maphash
+   #'(lambda (testname cases)
+       (format nil
+	       "~a ~A~%~{  ~S~%~}~&"
+	       (green "+")
+	       testname
+	       cases))
+   *passed-tests*))
 
 (defmacro define-case-test ((name parameters &key (all-test-name nil atn-p)) &body test-cases)
 ;; Assuming the body like

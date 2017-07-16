@@ -17,4 +17,5 @@
 	       (:file "all-test" :depends-on ("tokenizer-test" "parser-test")))
   :depends-on (:cl-parser-gen
 	       :macro-utilities
-	       :test-framework))
+	       :test-framework
+	       :cl-ansi-term))

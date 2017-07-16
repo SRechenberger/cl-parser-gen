@@ -9,7 +9,6 @@
   :licence "BSD"
   :description "Portable pathname manipulation functions."
   :long-description ""
-  :pathname "deps/pathnames/"
   :components
   ((:file "packages")
    (:file "pathnames" :depends-on ("packages"))))

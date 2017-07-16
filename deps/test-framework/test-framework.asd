@@ -9,7 +9,6 @@
   :licence "BSD"
   :description "Simple unit test framework for Common Lisp"
   :long-description ""
-  :pathname "deps/test-framework/"
   :components
   ((:file "packages")
    (:file "test" :depends-on ("packages")))

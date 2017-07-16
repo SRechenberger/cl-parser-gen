@@ -6,4 +6,11 @@
 	   :check
 	   :combine-results
 	   :define-case-test
-	   :define-test-for-all))
+	   :define-test-for-all
+	   :print-failed-tests
+	   :*test-output*
+	   :*test-cnt*
+	   :*failed-cnt*
+	   :*passed-cnt*
+	   :red
+	   :green))
