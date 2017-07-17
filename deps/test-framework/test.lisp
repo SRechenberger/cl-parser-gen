@@ -40,6 +40,7 @@ test functions or use `check' to run individual test cases."
 (defun report-result (result form)
   "Report the results of a single test case. Called by `check'."
   (format *test-output* "~:[~a~;~a~]" result (if result (green ".") (red "!")))
+  (finish-output *test-output*)
   (incf *printed-results*)
   (incf *test-cnt*)
   (when (< 32 *printed-results*)

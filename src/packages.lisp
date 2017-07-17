@@ -20,4 +20,5 @@
 	   :define-grammar
 	   :make-parser-table
 	   :eps-p
-	   :define-ll-1-parser))
+	   :define-ll-1-parser
+	   :make-rules))

@@ -40,6 +40,61 @@
 	  for (symb set) in body
 	  collect `(set-equal (gethash ,symb (follow-sets ,grammar)) ,set))))
 
+;; (defparameter *rand-state* (seed-random-state 1))
+
+(defmacro assocs (key alist)
+  `(remove-if-not
+    #'(lambda (pair)
+	(equalp ,key (car pair)))
+    ,alist))
+
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun flatten (structure)
+    (cond ((null structure) nil)
+	  ((atom structure) (list structure))
+	  (t (mapcan #'flatten structure))))
+  
+    
+  (defun expand-randomly (symb rules rstate)
+    (let* ((rs (assocs symb rules))
+	   (n  (length rs))
+	   (r  (unless (>= 0 n)
+		 (elt rs (random n rstate))))
+	   (e  (unless (>= 0 n)
+		 (second r))))
+      (if e
+	  (flatten (mapcar #'(lambda (e) (expand-randomly e rules rstate)) e))
+	  symb)))
+  
+  (defun double-marked (rules)
+    (loop
+       for rule in rules
+       if (equal (car rule) :!)
+       collect (cdr rule)
+       and collect (cdr rule)
+       else
+       collect rule
+       end)))
+
+(defmacro define-random-accept-test (test-name parser-name number start-symbol &body rules)
+  (let ((cases nil)
+	(rstate (sb-ext:seed-random-state 1))
+	(count (eval number))
+	(correct-rules (make-rules (double-marked rules))))
+    (loop
+       while (< 0 count)
+       do (progn
+	    (let ((cnt (length cases)))
+	      (pushnew (remove :eps (expand-randomly start-symbol correct-rules rstate)) cases)
+	      (when (< cnt (length cases))
+		(decf count)))))
+    `(define-test ,test-name ()
+       (check
+	,@(loop
+	     for c in cases
+	     collect `(,parser-name ',(append c (list :$))))))))
+
 ;;;; TESTS
 
 ;;; Grammar 1-8 
@@ -257,6 +312,19 @@
   (:F  --> :id)
   (:F --> :num))
 
+(define-random-accept-test
+    grammar-8-random-accept-test grammar-8-parser 50 :S
+  (:S --> :E)
+  (:E --> :T :E1)
+  (:E1 --> #\+ :E)
+  (:E1 --> :eps)
+  (:T --> :F :T1)
+  (:T1 --> #\* :T)
+  (:T1 --> :eps)
+  (:F  --> #\( :E #\))
+  (:! :F  --> :id)
+  (:! :F --> :num))
+
 (define-accept-test grammar-8-accept-test grammar-8-parser ()
   (list :id :$)
   (list :num :$)
@@ -323,7 +391,7 @@
 (define-ll-1-parser grammar-11-parser :S
   (:S --> :ints)
   (:ints --> :eps)
-  (:ints --> #'(lambda (tok) (and (integerp tok) (< 0 tok 10))) :ints))
+  (:ints --> #'(lambda (tok) (and (integerp tok) (< 0 tok 10))) :ints))  
 
 (define-accept-test grammar-11-accept-test grammar-11-parser ()
   (list :$)
@@ -338,21 +406,61 @@
   (list :a :b :c :$)
   (list 1 :a :b :c :$))
 
+;;; Grammar 12:
+(define-ll-1-parser grammar-12-parser :S
+  (:S --> :STMTS)
+  (:STMTS --> :STMT :STMTS)
+  (:STMTS --> :eps)
+  (:STMT --> :while :EXPR :do :STMTS :end)
+  (:STMT --> :if :EXPR :then :STMTS :else :STMTS :end)
+  (:STMT --> :id := :EXPR)
+  (:EXPR --> :id)
+  (:EXPR --> :num)
+  (:EXPR --> #\( :EXPR #\+ :EXPR #\)))
+
+(define-accept-test grammar-12-accept-test grammar-12-parser ()
+  (list :$)
+  (list :while :id :do :end :$)
+  (list :if :id :then :else :end :$)
+  (list :id := :num :id := :id :id := #\( :id #\+ :num #\) :$))
+
+(define-reject-test grammar-12-reject-test grammar-12-parser ()
+  (list :id :$)
+  (list :num :$)
+  (list :if :while :id :do :id := :num :end :then :else :end :$)
+  (list :id := :while :id :do :end :$))
+
+(define-random-accept-test grammar-12-random-accept-test grammar-12-parser 50 :S
+  (:S --> :STMTS)
+  (:STMTS --> :STMT :STMTS)
+  (:STMTS --> :eps)
+  (:STMT --> :while :EXPR :do :STMTS :end)
+  (:STMT --> :if :EXPR :then :STMTS :else :STMTS :end)
+  (:STMT --> :id := :EXPR)
+  (:EXPR --> :id)
+  (:! :EXPR --> :num)
+  (:EXPR --> #\( :EXPR #\+ :EXPR #\)))
+  
+
 ;;; Test combinations
 
 (define-test accept-tests ()
   (combine-results
     (grammar-8-accept-test)
+    (grammar-8-random-accept-test)
     (grammar-9-accept-test)
     (grammar-10-accept-test)
-    (grammar-11-accept-test)))
+    (grammar-11-accept-test)
+    (grammar-12-accept-test)
+    (grammar-12-random-accept-test)))
 
 (define-test reject-tests ()
   (combine-results
     (grammar-8-reject-test)
     (grammar-9-reject-test)
     (grammar-10-reject-test)
-    (grammar-11-reject-test)))
+    (grammar-11-reject-test)
+    (grammar-12-reject-test)))
 
 (define-test parser-test ()
   (combine-results
