@@ -1,5 +1,0 @@
-cl-parser-gen.asd
-cl-parser-gen-test.asd
-deps/pathnames/pathnames.asd
-deps/test-framework/test-framework.asd
-deps/macro-utilities/macro-utilities.asd

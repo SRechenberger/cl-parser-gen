@@ -41,7 +41,7 @@
    #'(lambda (res)
        (funcall f (first res)))))
 
-(define-test whitespaces-test ()
+(com.gigamonkeys.test:define-test whitespaces-test ()
   (check
     (equal (whitespaces "") nil)
     (equal (whitespaces " ") (list 1))

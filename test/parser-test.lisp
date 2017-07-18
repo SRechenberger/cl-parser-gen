@@ -63,9 +63,12 @@
 		 (elt rs (random n rstate))))
 	   (e  (unless (>= 0 n)
 		 (second r))))
-      (if e
-	  (flatten (mapcar #'(lambda (e) (expand-randomly e rules rstate)) e))
-	  symb)))
+      (cond
+	(e (flatten (mapcar #'(lambda (e) (expand-randomly e rules rstate)) e)))
+	((and (listp symb)
+	      (equal (car symb) :!))
+	 (eval (second symb)))
+	(t symb))))
   
   (defun double-marked (rules)
     (loop
@@ -349,6 +352,13 @@
   (:S1 --> #\( :S1 #\+ :F #\))
   (:F --> :a))
 
+(define-random-accept-test
+    grammar-9-random-accept-test grammar-9-parser 50 :S
+  (:S --> :S1)
+  (:S1 --> :F)
+  (:S1 --> #\( :S1 #\+ :F #\))
+  (:F --> :a))  
+
 (define-accept-test grammar-9-accept-test grammar-9-parser ()
   (list :a :$)
   (list #\( :a #\+ :a #\) :$)
@@ -368,6 +378,12 @@
   (:S1 --> :F)
   (:S1 --> #\( :S1 #\+ :F #\))
   (:F --> #'integerp))
+
+(define-random-accept-test grammar-10-random-accept-test grammar-10-parser 50 :S
+  (:S --> :S1)
+  (:S1 --> :F)
+  (:S1 --> #\( :S1 #\+ :F #\))
+  (:F --> (:! (random 1000))))  
 
 (define-accept-test grammar-10-accept-test grammar-10-parser ()
   (list 1 :$)
@@ -392,6 +408,11 @@
   (:S --> :ints)
   (:ints --> :eps)
   (:ints --> #'(lambda (tok) (and (integerp tok) (< 0 tok 10))) :ints))  
+
+(define-random-accept-test grammar-11-random-accept-test grammar-11-parser 50 :S
+  (:S --> :ints)
+  (:ints --> :eps)
+  (:ints --> (:! (1+ (random 9))) :ints))
 
 (define-accept-test grammar-11-accept-test grammar-11-parser ()
   (list :$)
@@ -449,8 +470,11 @@
     (grammar-8-accept-test)
     (grammar-8-random-accept-test)
     (grammar-9-accept-test)
+    (grammar-9-random-accept-test)
     (grammar-10-accept-test)
+    (grammar-10-random-accept-test)
     (grammar-11-accept-test)
+    (grammar-11-random-accept-test)
     (grammar-12-accept-test)
     (grammar-12-random-accept-test)))
 
