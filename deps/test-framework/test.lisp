@@ -43,7 +43,7 @@ test functions or use `check' to run individual test cases."
   (finish-output *test-output*)
   (incf *printed-results*)
   (incf *test-cnt*)
-  (when (< 32 *printed-results*)
+  (when (< 64 *printed-results*)
     (setf *printed-results* 0)
     (format *test-output* "~&"))
   (if result
