@@ -63,9 +63,15 @@
 		 (elt rs (random n rstate))))
 	   (e  (unless (>= 0 n)
 		 (second r))))
-      (if e
-	  (flatten (mapcar #'(lambda (e) (expand-randomly e rules rstate)) e))
-	  symb)))
+      (cond
+	(e (flatten (mapcar #'(lambda (e) (expand-randomly e rules rstate)) e)))
+	((and (listp symb)
+	      (equal (car symb) :!))
+	 (expand-randomly (eval (second symb)) rules rstate))
+	(t symb))))
+
+  (defun uniform (&rest list)
+    (elt list (random (length list))))
   
   (defun double-marked (rules)
     (loop
@@ -77,7 +83,7 @@
        collect rule
        end)))
 
-(defmacro define-random-accept-test (test-name parser-name number start-symbol &body rules)
+(defmacro define-random-test (test-name parser-name number start-symbol accept-reject-p &body rules)
   (let ((cases nil)
 	(rstate (sb-ext:seed-random-state 1))
 	(count (eval number))
@@ -93,7 +99,9 @@
        (check
 	,@(loop
 	     for c in cases
-	     collect `(,parser-name ',(append c (list :$))))))))
+	     collect (if accept-reject-p
+			 `(,parser-name ',(append c (list :$)))
+			 `(or (>= 15 (length ',(append c (list :$)))) (not (,parser-name ',(append c (list :$)))))))))))
 
 ;;;; TESTS
 
@@ -312,8 +320,8 @@
   (:F  --> :id)
   (:F --> :num))
 
-(define-random-accept-test
-    grammar-8-random-accept-test grammar-8-parser 50 :S
+(define-random-test
+    grammar-8-random-accept-test grammar-8-parser 50 :S t
   (:S --> :E)
   (:E --> :T :E1)
   (:E1 --> #\+ :E)
@@ -324,6 +332,21 @@
   (:F  --> #\( :E #\))
   (:! :F  --> :id)
   (:! :F --> :num))
+
+(define-random-test
+    grammar-8-random-reject-test grammar-8-parser 50 :S nil
+  (:S --> :E)
+  (:E --> :T :E1)
+  (:E1 --> #\+ :T)
+  (:E1 --> :eps)
+  (:T --> :F :T1)
+  (:T1 --> #\* :F)
+  (:T1 --> :eps)
+  (:! :F  --> #\( (:! (uniform :F :S :T)) #\))
+  (:F  --> :id)
+  (:F --> :num)
+  (:! :F --> :err))
+   
 
 (define-accept-test grammar-8-accept-test grammar-8-parser ()
   (list :id :$)
@@ -349,6 +372,13 @@
   (:S1 --> #\( :S1 #\+ :F #\))
   (:F --> :a))
 
+(define-random-test
+    grammar-9-random-accept-test grammar-9-parser 50 :S t
+  (:S --> :S1)
+  (:S1 --> :F)
+  (:S1 --> #\( :S1 #\+ :F #\))
+  (:F --> :a))  
+
 (define-accept-test grammar-9-accept-test grammar-9-parser ()
   (list :a :$)
   (list #\( :a #\+ :a #\) :$)
@@ -368,6 +398,12 @@
   (:S1 --> :F)
   (:S1 --> #\( :S1 #\+ :F #\))
   (:F --> #'integerp))
+
+(define-random-test grammar-10-random-accept-test grammar-10-parser 50 :S t
+  (:S --> :S1)
+  (:S1 --> :F)
+  (:S1 --> #\( :S1 #\+ :F #\))
+  (:F --> (:! (random 1000))))  
 
 (define-accept-test grammar-10-accept-test grammar-10-parser ()
   (list 1 :$)
@@ -392,6 +428,11 @@
   (:S --> :ints)
   (:ints --> :eps)
   (:ints --> #'(lambda (tok) (and (integerp tok) (< 0 tok 10))) :ints))  
+
+(define-random-test grammar-11-random-accept-test grammar-11-parser 50 :S t
+  (:S --> :ints)
+  (:ints --> :eps)
+  (:ints --> (:! (1+ (random 9))) :ints))
 
 (define-accept-test grammar-11-accept-test grammar-11-parser ()
   (list :$)
@@ -430,7 +471,7 @@
   (list :if :while :id :do :id := :num :end :then :else :end :$)
   (list :id := :while :id :do :end :$))
 
-(define-random-accept-test grammar-12-random-accept-test grammar-12-parser 50 :S
+(define-random-test grammar-12-random-accept-test grammar-12-parser 50 :S t
   (:S --> :STMTS)
   (:STMTS --> :STMT :STMTS)
   (:STMTS --> :eps)
@@ -449,14 +490,18 @@
     (grammar-8-accept-test)
     (grammar-8-random-accept-test)
     (grammar-9-accept-test)
+    (grammar-9-random-accept-test)
     (grammar-10-accept-test)
+    (grammar-10-random-accept-test)
     (grammar-11-accept-test)
+    (grammar-11-random-accept-test)
     (grammar-12-accept-test)
     (grammar-12-random-accept-test)))
 
 (define-test reject-tests ()
   (combine-results
     (grammar-8-reject-test)
+    (grammar-8-random-reject-test)
     (grammar-9-reject-test)
     (grammar-10-reject-test)
     (grammar-11-reject-test)

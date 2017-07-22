@@ -1,3 +1,4 @@
+(setf ql:*local-project-directories* nil)
 (pushnew (truename ".") ql:*local-project-directories*)
 (ql:register-local-projects)
 
