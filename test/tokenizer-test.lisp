@@ -7,15 +7,15 @@
 
 (define-tokenizer whitespaces ()
     ("(\\s*)"
-     #'(lambda (res) (length (first res)))))
+     #'(lambda (res) (length res))))
 
 (define-tokenizer pairs ()
-    ("\\(([^,]+),([^,]+)\\)" #'id))
+  ("\\(([^,]+),([^,]+)\\)" #'id))
 
 (define-tokenizer integers ()
     ("(\\d+)\\s*"
      #'(lambda (res)
-	 (parse-integer (first res)))))
+	 (parse-integer res))))
 
 (define-tokenizer choosing ()
   ("(a|A)"
@@ -25,21 +25,21 @@
 
 (define-tokenizer calcs ()
   ("add\\s*\\((\\d+),(\\d+)\\)"
-   #'(lambda (res)
-       (apply #'+ (mapcar #'parse-integer res))))
+   #'(lambda (a b)
+       (+ (parse-integer a) (parse-integer b))))
   ("sub\\s*\\((\\d+),(\\d+)\\)"
-   #'(lambda (res)
-       (apply #'- (mapcar #'parse-integer res)))))
+   #'(lambda (a b)
+       (- (parse-integer a) (parse-integer b)))))
 
 (define-tokenizer params-1 (a b)
   ("(\\d+)"
    #'(lambda (res)
-       (+ a (* b (parse-integer (first res)))))))
+       (+ a (* b (parse-integer res))))))
 
 (define-tokenizer params-2 (f)
   ("([^;]*);"
    #'(lambda (res)
-       (funcall f (first res)))))
+       (funcall f res))))
 
 (define-test whitespaces-test ()
   (check

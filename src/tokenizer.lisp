@@ -36,11 +36,13 @@ vector of the regex; hence the ID function, if you want to get the plain match."
 				 (setf ,tmp (first-match ,regex ,input))
 				 (when ,tmp
 				   (setf ,input (first ,tmp))
-				   (funcall ,func (second ,tmp))))))
+				   (apply ,func (second ,tmp))))))
 	       (error 'tokenizer-error
 		      :text (format nil "~a"
 					(subseq ,input 0 (min (length ,input) 20))))))))))
      
-(defun id (x)
+(defun id (x &rest xs)
   "The Identity function. May get handy sometime."
-  x)
+  (cond
+    (xs (cons x xs))
+    (t  x)))
